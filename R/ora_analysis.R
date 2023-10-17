@@ -11,7 +11,6 @@
 #' @return A character vector of converted Entrez gene IDs.
 #' @importFrom biomaRt getBM
 #' @importFrom dplyr %>%
-#' @export
 #'
 #' @examples
 #' \dontrun{
