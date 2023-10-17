@@ -1,0 +1,34 @@
+Package: DiscoNet
+Type: Package
+Title: What the Package Does (Title Case)
+Version: 0.1.0
+Authors@R:
+  c(person(given = "Giorgia",
+           family = "Moranzoni",
+           role = c("aut", "cre"),
+           email = "gimo@dtu.dk"))
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: false
+Imports:
+  biomaRt,
+  dplyr,
+  fgsea,
+  forcats,
+  ggnetwork,
+  ggplot2,
+  ggraph,
+  httr,
+  igraph,
+  msigdbr,
+  pheatmap,
+  plotly,
+  purrr,
+  stringr,
+  tibble,
+  tidyr
+RoxygenNote: 7.2.3
+Depends: 
+    R (>= 4.0)
