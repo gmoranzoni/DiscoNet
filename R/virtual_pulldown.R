@@ -13,7 +13,7 @@
 #'
 #' @return A data frame with nodes and their respective ECC relevance scores.
 #'
-#' @importFrom dplyr inner_join rename filter group_by summarise left_join rowwise mutate select
+#' @importFrom dplyr inner_join rename filter group_by summarise left_join rowwise mutate select n case_when
 #' @importFrom tidyr replace_na
 #'
 #'
@@ -26,43 +26,54 @@
 #'}
 calculate_relevance_score <- function(network, seed_nodes, database) {
 
-  #nodes that share neighbor with a neighbor (in a triangle)
+  # nodes that share neighbor with a neighbor (in a triangle) - set of common neighbors
   triangle_interactions <- network %>%
-    inner_join(., network, by="interactors", multiple = "all", relationship = "many-to-many") %>%
+    inner_join(., network, by = "interactors", multiple = "all", relationship = "many-to-many") %>%
     rename(
       "nodes" = "nodes.x",
       "neighbors" = "interactors",
       "second_neighbors" = "nodes.y"
     ) %>%
-    filter(nodes!=second_neighbors)  %>% #ensure that second neighbor is not self
-    inner_join(., network, by=c("nodes"="nodes", "second_neighbors"="interactors"), multiple = "all", relationship = "many-to-many") %>%
+    filter(nodes!= second_neighbors)  %>% # ensure that second neighbor is not self
+    inner_join(., network, by = c("nodes" = "nodes", "second_neighbors" = "interactors"),
+               multiple = "all", relationship = "many-to-many") %>% # find the nodes that interact with their second neighbors
     group_by(nodes, neighbors) %>%
-    summarise(c = n(), .groups = "keep")
+    summarise(c = n(), .groups = "keep") # c is the number of second neighbors for each pair of nodes
 
-  # find total database number of interactions per node
-  # I am considering the database of converted IDs
-  database_interactions <- database %>%
+  # find total database number of interactions per node. Note that each node appears both in the node and in the interactors column, so both need to be included in the calculation.
+  # "database" is the database of converted IDs
+  database_interactions1 <- database %>%
     group_by(nodes) %>%
-    summarise(int_total = n())
+    summarise(int_total_n = n())
+
+  database_interactions2 <- database %>%
+    group_by(interactors) %>%
+    summarise(int_total_i = n())
+
+  database_interactions <- left_join(database_interactions1, database_interactions2, by = c("nodes" = "interactors")) %>%
+    replace_na(., replace = list("int_total_n" = 0, "int_total_i" = 0)) %>%
+    rowwise() %>%
+    mutate(int_total = int_total_n + int_total_i) %>%
+    select(nodes, int_total)
 
   # combine interaction count tables
   n_interactions <- network %>%
     left_join(., database_interactions, "nodes", multiple = "all")  %>%
-    left_join(., database_interactions, by=c("interactors"="nodes"), multiple = "all")  %>%
+    left_join(., database_interactions, by = c("interactors" = "nodes"), multiple = "all")  %>%
     rowwise()  %>%
-    mutate( int_total = min(int_total.x, int_total.y) ) %>%
-    left_join(., triangle_interactions, by=c("nodes"="nodes", "interactors"="neighbors")) %>%
+    mutate(int_total = min(int_total.x - 1, int_total.y - 1)) %>% # from the ECC rel score formula PMC5860626
+    left_join(., triangle_interactions, by = c("nodes" = "nodes", "interactors" = "neighbors")) %>%
     replace_na(., replace = list("c" = 0)) %>%  #remove nan
     mutate(parts = c/int_total) %>%
     replace_na(., replace = list("parts" = 0)) %>%  #remove nan
     group_by(nodes) %>%
-    summarise( score = mean(parts) )
+    summarise(score = mean(parts))
 
   # calculate relevance score
   relevance_scores <- n_interactions %>% rowwise(.)  %>%
     mutate(seed = ifelse(nodes %in% seed_nodes == T, T, F)) %>% # test if seed nodes
     mutate("ecc_rel_score" = case_when(seed == T ~ 1,
-                                       seed == F ~ score )) %>%
+                                       seed == F ~ score)) %>%
     select("nodes", "ecc_rel_score")
 
   return(relevance_scores)
