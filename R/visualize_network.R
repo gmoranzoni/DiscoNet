@@ -11,7 +11,8 @@
 #'
 #' @return A list containing the static ggplot object and interactive plotly visualization of the network.
 #'
-#' @importFrom igraph simplify
+#' @import igraph
+#' @import ggplot2
 #' @importFrom ggnetwork ggnetwork
 #' @importFrom dplyr as_tibble %>%
 #' @importFrom ggplot2 ggplot scale_fill_viridis_d scale_fill_discrete scale_color_viridis_c scale_shape_manual scale_color_continuous labs

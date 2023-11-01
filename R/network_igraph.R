@@ -13,7 +13,7 @@
 #' @param relevance_score_cutoff A numeric value representing the minimum relevance score for nodes to be included in the output graph. Defaults to 0.
 #'
 #' @return An igraph object representing the network, with specified attributes.
-#' @importFrom igraph graph_from_data_frame V edge_attr_names delete_edge_attr set_vertex_attr delete_vertices
+#' @import igraph
 #' @export
 #'
 #' @examples

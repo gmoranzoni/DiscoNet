@@ -25,5 +25,6 @@ inweb <- inweb %>%
     confidence_score = as.numeric(str_extract(confidence_score, "^[^|]+"))
   )
 
+inweb <- as_tibble(inweb)
 
-usethis::use_data(inweb, overwrite = TRUE)
+usethis::use_data(inweb, overwrite = TRUE, internal = FALSE)

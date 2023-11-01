@@ -11,7 +11,7 @@
 #' @return A numeric vector containing the weights of each vertex in the input graph.
 #'         The order of weights corresponds to the order of vertices in the graph.
 #'
-#' @importFrom igraph induced_subgraph graph.coreness ecount vcount which_loop
+#' @import igraph
 #'
 #' @examples
 #' \dontrun{
@@ -190,7 +190,7 @@ mcode.find.complexes<-function(graph, neigh, vertex_weight, D) {
 #'
 #' @return A numeric vector containing the vertex indices that constitute the expanded complex.
 #'
-#' @importFrom igraph neighborhood induced.subgraph graph.density
+#' @import igraph
 #' @export
 #'
 #' @examples
@@ -233,7 +233,7 @@ mcode.fluff.complex<-function(graph,vertex.weight,fdt = 0.8,complex.g,seen){
 #' @return A list where each element is a numeric vector of vertex indices, representing refined
 #'         clusters after post-processing steps have been applied.
 #'
-#' @importFrom igraph neighborhood induced.subgraph graph.density graph.coreness
+#' @import igraph
 #' @examples
 #' \dontrun{
 #' # Assuming the existence of a graph, vertex weights, and other necessary inputs:
@@ -295,7 +295,7 @@ mcode.post.process<-function(graph,vertex.weight,haircut,fluff,fdt=0.8, set.comp
 #'   in large protein interaction networks. BMC Bioinformatics. 2003 Jan 13;4(1):2.
 #' @return A list containing clusters sorted by a computed score based on size and edge count.
 #'   Each element of the list represents a cluster and contains vertex IDs belonging to that cluster.
-#' @importFrom igraph is.igraph simplify neighborhood induced.subgraph is.loop ecount vcount
+#' @import igraph
 #' @seealso \code{\link{cluster}}
 #' @examples
 #' \dontrun{
@@ -370,7 +370,7 @@ mcode <- function(graph, D = 0.5, haircut = FALSE, fluff = FALSE, fdt = 0.8, loo
 #'
 #' @return A list of induced subgraphs representing detected communities. For MCODE,
 #'   the list also includes scores for each subgraph.
-#' @importFrom igraph is.igraph V cluster_louvain membership cluster_leiden induced_subgraph
+#' @import igraph
 #' @export
 #' @examples
 #' \dontrun{

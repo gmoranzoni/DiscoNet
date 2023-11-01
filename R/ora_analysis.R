@@ -58,7 +58,7 @@ convert_to_entrez <- function(gene_list, mart, id_type) {
 #' @param custom_gene_set A logical flag, TRUE if using a custom gene set, FALSE otherwise. Defaults to FALSE.
 #' @param universe A string indicating the universe for the ORA. Defaults to "whole_network".
 #' @param id_type A string indicating the type of gene ID used, e.g., "uniprot", "ensembl", etc.
-#' @importFrom igraph is.igraph V
+#' @import igraph
 #' @importFrom biomaRt useMart
 #' @importFrom msigdbr msigdbr
 #' @importFrom dplyr %>%
