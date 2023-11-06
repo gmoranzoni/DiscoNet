@@ -11,6 +11,8 @@
 #' @return A character vector of converted Entrez gene IDs.
 #' @importFrom biomaRt getBM
 #' @importFrom dplyr %>%
+#' @importFrom httr timeout set_config config
+#' @import curl
 #'
 #' @examples
 #' \dontrun{
@@ -34,6 +36,11 @@ convert_to_entrez <- function(gene_list, mart, id_type) {
     stop(paste("Invalid id_type:", id_type, ". Valid types are:", paste(names(id_filters), collapse=", ")))
   }
 
+  timeout(seconds = 500)
+  # h <- new_handle()
+  # handle_setopt(h, timeout_ms = 500000)  # sets timeout to 500 seconds
+  #options(timeout = 500)
+  #set_config(config(timeout = 500))  # Set timeout to 500 seconds for http
   res <- getBM(attributes = c("entrezgene_id", id_filters[[id_type]]),
                filters = id_filters[[id_type]],
                values = gene_list,
@@ -56,7 +63,7 @@ convert_to_entrez <- function(gene_list, mart, id_type) {
 #' @param collection A string indicating the MSigDB collection, or NULL if not using MSigDB.
 #' @param ontology A string indicating the MSigDB ontology, or NULL if not using this ontology.
 #' @param custom_gene_set A logical flag, TRUE if using a custom gene set, FALSE otherwise. Defaults to FALSE.
-#' @param universe A string indicating the universe for the ORA. Defaults to "whole_network".
+#' @param universe A string indicating the universe for the ORA. Must be defined by the user. Must be entrezIDs (for now).
 #' @param id_type A string indicating the type of gene ID used, e.g., "uniprot", "ensembl", etc.
 #' @import igraph
 #' @importFrom biomaRt useMart
@@ -64,6 +71,7 @@ convert_to_entrez <- function(gene_list, mart, id_type) {
 #' @importFrom dplyr %>%
 #' @importFrom purrr map
 #' @importFrom fgsea fora
+#' @importFrom httr set_config config
 #' @return A list containing the ORA results for each community.
 #' @export
 #'
@@ -75,8 +83,15 @@ convert_to_entrez <- function(gene_list, mart, id_type) {
 #' # Assuming `sample_graph` is a predefined igraph object and `sample_communities` is a list of igraph subgraphs.
 #' results <- ora_analysis(graph = sample_graph, communities = sample_communities, organism = "human", id_type = "uniprot")
 #'}
-ora_analysis <- function(graph, communities, organism, collection = NULL, ontology = NULL, custom_gene_set = F, universe = "whole_network", id_type) {
+ora_analysis <- function(graph, communities, organism, collection = NULL, ontology = NULL, custom_gene_set = F, universe, id_type) {
+
   stopifnot(is.igraph(graph))
+
+  # Check if universe is provided
+  if(missing(universe)) {
+    stop("The 'universe' argument must be provided.")
+  }
+
   # Define a lookup list for the appropriate filters based on the ID type
   id_filters <- list(
     "uniprot" = "uniprot_gn_id",
@@ -98,12 +113,6 @@ ora_analysis <- function(graph, communities, organism, collection = NULL, ontolo
                    "human" = useMart("ensembl", dataset = "hsapiens_gene_ensembl"),
                    "mouse" = useMart(biomart = "ensembl", dataset = "mmusculus_gene_ensembl"),
                    stop(paste("Unsupported organism:", organism)))
-
-    # Convert the universe to Entrez IDs
-    if(universe == "whole_network") {
-      universe_genes <- V(graph)$name
-      universe <- convert_to_entrez(universe_genes, mart, id_type)
-    }
   }
 
   # Check for the algorithm used

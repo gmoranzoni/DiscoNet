@@ -15,7 +15,8 @@
 #' @importFrom dplyr mutate filter left_join rename as_tibble mutate_all na_if
 #' @importFrom biomaRt useMart getBM
 #' @importFrom stringr str_replace
-#' @importFrom httr set_config config
+#' @importFrom httr set_config config timeout
+#' @import curl
 #'
 #' @examples
 #' \dontrun{
@@ -37,7 +38,7 @@
 #' IDs that couldn’t be mapped to the database and IDs that returned multiple mappings
 #' will be reported to help in troubleshooting and data cleaning.
 translate_database <- function(database) {
-  set_config(config(timeout = 300)) # setting timeout for fetching ids
+
   # Check if the provided database is valid
   if(!database %in% c("inweb", "string")) {
     stop("The provided database is not supported. Choose either 'inweb' or 'string'.")
@@ -61,6 +62,11 @@ translate_database <- function(database) {
     # convert entries into multiple IDs
     ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
 
+    timeout(seconds = 500)
+    # h <- new_handle()
+    # handle_setopt(h, timeout_ms = 500000)  # sets timeout to 500 seconds
+    #options(timeout = 500)
+    #set_config(config(timeout = 500))  # Set timeout to 500 seconds for http
     converted_ids_string1 <- getBM(
       attributes = c('ensembl_peptide_id', 'uniprotswissprot', 'ensembl_gene_id', 'ensembl_transcript_id', 'hgnc_symbol'),
       filters = 'ensembl_peptide_id',

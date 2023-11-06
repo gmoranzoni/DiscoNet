@@ -132,11 +132,11 @@ get_all_interactions <- function(database) {
 #' @param string_confidence_score A confidence score threshold for STRING database (default is 700). Should be set to NULL if not used.
 #' @param zs_confidence_score ZS confidence score to use in the inweb database. Interactions with a score higher than 0.156 (default) are considered high confidence. Should be set to NULL if not used. Goes from 0 to 1.
 #' @param order Numeric value (0 or 1) defining whether to fetch immediate interactors (order=1) or to also include second-level interactors (order=0).
-#' @return A tibble that includes nodes, their interactors, calculated relevance scores, and a flag indicating
+#' @return A list of two tibbles. One is the network and one is a node table, with two columns: seed and the calculated ecc_rel_score. The column "seed" describes
 #' whether a node is a seed (1 for seed, 0 otherwise). Rows with NA values are removed from the final output,
 #' and a message is displayed indicating the nodes that were removed.
 #'
-#' @importFrom dplyr %>% mutate filter select rename left_join full_join as_tibble mutate_all pull
+#' @importFrom dplyr %>% mutate filter select rename left_join full_join as_tibble mutate_all pull ungroup distinct
 #' @importFrom stats na.omit
 #' @importFrom tidyr drop_na
 #' @importFrom stringr str_replace
@@ -218,59 +218,73 @@ virtual_pulldown <- function(seed_nodes, database, id_type, string_confidence_sc
 
   if(order == 0) {
 
-    network_final <- database %>%
+    network <- database %>%
       filter(nodes %in% seed_nodes & interactors %in% seed_nodes)
 
   }else if(order == 1) {
-  all_network <- get_all_interactions(database = database)
+    all_network <- get_all_interactions(database = database)
 
-  #### now the virtual pulldown itself
+    #### now the virtual pulldown itself
 
-  seed_tibble <- tibble(nodes = seed_nodes, seed = 1)
+    seed_tibble <- tibble(nodes = seed_nodes, seed = 1)
 
-  # find the interactors of the seed proteins in the database.
-  # intermediate contains the seeds + the first order interactors of the seeds.
-  intermediate <- all_network %>%
-    filter((nodes %in% seed_tibble$nodes)|(interactors %in% seed_tibble$nodes)) %>%
-    as_tibble()
+    # find the interactors of the seed proteins in the database.
+    # intermediate contains the seeds + the first order interactors of the seeds.
+    intermediate <- all_network %>%
+      filter((nodes %in% seed_tibble$nodes)|(interactors %in% seed_tibble$nodes)) %>%
+      as_tibble()
 
-  # all_proteins contains the whole list of proteins in the resulting network.
-  all_proteins <- as_tibble_col(c(intermediate$nodes, intermediate$interactors),
-                                column_name = "protein_name") %>% unique()
+    # all_proteins contains the whole list of proteins in the resulting network.
+    all_proteins <- as_tibble_col(c(intermediate$nodes, intermediate$interactors),
+                                  column_name = "protein_name") %>% unique()
 
-  # now, we want to find all the possible interactions in our network. So we need the 1st order interactors
-  # of the seeds, and then the interactions happening between them.
+    # now, we want to find all the possible interactions in our network. So we need the 1st order interactors
+    # of the seeds, and then the interactions happening between them.
 
-  network <- all_network %>%
-    filter(
-      (nodes %in% all_proteins$protein_name) &
-        (interactors %in% all_proteins$protein_name)
-    ) %>%
-    as_tibble()
+    network <- all_network %>%
+      filter(
+        (nodes %in% all_proteins$protein_name) &
+          (interactors %in% all_proteins$protein_name)
+      ) %>%
+      as_tibble()
+
+    # Identify rows with NA and capture nodes
+    na_nodes <- network %>% filter(rowSums(is.na(.)) > 0) %>% pull(nodes)
+    # Calculate number of rows with NA
+    na_rows_count <- length(na_nodes)
+    # Check for NAs and remove rows
+    network <- network %>% drop_na()
+
+    if(na_rows_count > 0) {
+      nodes_str <- paste(na_nodes, collapse = ", ")
+      cat(paste("Detected", na_rows_count, "nodes with no interactions:", nodes_str, ". The corresponding rows have been removed from the network.\n"))
+    }
+  }
 
   rel <- calculate_relevance_score(network = network, seed_nodes = seed_nodes, database = database)
 
-  network_rel_score <- network %>%
-    left_join(rel, by = "nodes") %>%
-    full_join(seed_tibble, by = "nodes") %>%
+  # create attribute table including seed and ecc_relevance score
+  node_attributes <- rel %>%
+    left_join(., seed_tibble, by = "nodes") %>%
     mutate(seed = replace_na(seed, 0)) # replace NAs with "0", only in the seed column. So that the non-seed are 0s.
 
+  # Step to remove double interactions e.g A-B and B-A should count as 1, not 2.
+  # Create a unique identifier for each interaction pair
+  network_final <- network %>%
+    rowwise() %>%
+    mutate(interaction_id = paste(sort(c(nodes, interactors)), collapse = "-")) %>%
+    ungroup()
 
-  # Identify rows with NA and capture nodes
-  na_nodes <- network_rel_score %>% filter(rowSums(is.na(.)) > 0) %>% pull(nodes)
-  # Calculate number of rows with NA
-  na_rows_count <- length(na_nodes)
-  # Check for NAs and remove rows
-  network_rel_score <- network_rel_score %>% drop_na()
+  # Now filter out the duplicates
+  network_final <- network_final %>%
+    distinct(interaction_id, .keep_all = TRUE) %>%
+    select(., -interaction_id)
 
+  network_list <- list()
+  # save the network (only node and interactors columns)
+  network_list$network <- network_final
 
-  if(na_rows_count > 0) {
-    nodes_str <- paste(na_nodes, collapse = ", ")
-    cat(paste("Detected", na_rows_count, "nodes with no interactions:", nodes_str, ". The corresponding rows have been removed from the network.\n"))
-  }
+  network_list$node_attributes <- node_attributes
 
-  network_final <- network_rel_score
-  }
-
-  return(network_final)
+  return(network_list)
 }

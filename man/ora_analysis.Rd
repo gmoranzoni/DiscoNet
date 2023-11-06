@@ -11,7 +11,7 @@ ora_analysis(
   collection = NULL,
   ontology = NULL,
   custom_gene_set = F,
-  universe = "whole_network",
+  universe,
   id_type
 )
 }
@@ -28,7 +28,7 @@ ora_analysis(
 
 \item{custom_gene_set}{A logical flag, TRUE if using a custom gene set, FALSE otherwise. Defaults to FALSE.}
 
-\item{universe}{A string indicating the universe for the ORA. Defaults to "whole_network".}
+\item{universe}{A string indicating the universe for the ORA. Must be defined by the user. Must be entrezIDs (for now).}
 
 \item{id_type}{A string indicating the type of gene ID used, e.g., "uniprot", "ensembl", etc.}
 }

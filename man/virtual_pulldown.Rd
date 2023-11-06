@@ -28,7 +28,7 @@ virtual_pulldown(
 \item{order}{Numeric value (0 or 1) defining whether to fetch immediate interactors (order=1) or to also include second-level interactors (order=0).}
 }
 \value{
-A tibble that includes nodes, their interactors, calculated relevance scores, and a flag indicating
+A list of two tibbles. One is the network and one is a node table, with two columns: seed and the calculated ecc_rel_score. The column "seed" describes
 whether a node is a seed (1 for seed, 0 otherwise). Rows with NA values are removed from the final output,
 and a message is displayed indicating the nodes that were removed.
 }
