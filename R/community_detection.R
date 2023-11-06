@@ -191,7 +191,6 @@ mcode.find.complexes<-function(graph, neigh, vertex_weight, D) {
 #' @return A numeric vector containing the vertex indices that constitute the expanded complex.
 #'
 #' @import igraph
-#' @export
 #'
 #' @examples
 #' \dontrun{
