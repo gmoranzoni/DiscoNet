@@ -40,7 +40,8 @@ calculate_relevance_score <- function(network, seed_nodes, database) {
     group_by(nodes, neighbors) %>%
     summarise(c = n(), .groups = "keep") # c is the number of second neighbors for each pair of nodes
 
-  # find total database number of interactions per node. Note that each node appears both in the node and in the interactors column, so both need to be included in the calculation.
+  # find total database number of interactions per node. Note that each node appears both in the node and
+  # in the interactors column, so both need to be included in the calculation.
   # "database" is the database of converted IDs
   database_interactions1 <- database %>%
     group_by(nodes) %>%
@@ -50,7 +51,7 @@ calculate_relevance_score <- function(network, seed_nodes, database) {
     group_by(interactors) %>%
     summarise(int_total_i = n())
 
-  database_interactions <- left_join(database_interactions1, database_interactions2, by = c("nodes" = "interactors")) %>%
+  database_interactions <- full_join(database_interactions1, database_interactions2, by = c("nodes" = "interactors")) %>%
     replace_na(., replace = list("int_total_n" = 0, "int_total_i" = 0)) %>%
     rowwise() %>%
     mutate(int_total = int_total_n + int_total_i) %>%
@@ -74,7 +75,8 @@ calculate_relevance_score <- function(network, seed_nodes, database) {
     mutate(seed = ifelse(nodes %in% seed_nodes == T, T, F)) %>% # test if seed nodes
     mutate("ecc_rel_score" = case_when(seed == T ~ 1,
                                        seed == F ~ score)) %>%
-    select("nodes", "ecc_rel_score")
+    select("nodes", "ecc_rel_score") %>%
+    rename("relevance_score" = "ecc_rel_score")
 
   return(relevance_scores)
 }
@@ -166,11 +168,13 @@ virtual_pulldown <- function(seed_nodes, database, id_type, string_confidence_sc
   # filtering step based on the confidence score
   if("string_cs" %in% colnames(database)) {
     database <- database %>%
-      filter(string_cs > string_confidence_score)
+      filter(string_cs > string_confidence_score) %>%
+      rename(confidence_score = string_cs)
   }
   else if("inweb_cs" %in% colnames(database)) {
     database <- database %>%
-      filter(inweb_cs > zs_confidence_score)
+      filter(inweb_cs > zs_confidence_score) %>%
+      rename(confidence_score = inweb_cs)
   }
   else {
     if(!is.null(zs_confidence_score) || !is.null(string_confidence_score)) {
@@ -180,48 +184,65 @@ virtual_pulldown <- function(seed_nodes, database, id_type, string_confidence_sc
 
   # select the relevant columns based on the IDs
   if(id_type == "ensp") {
-    database <- database %>% select(nodes_ensp, interactors_ensp)
+    database <- database %>% select(nodes_ensp, interactors_ensp, confidence_score)
     database <- database %>% rename(
       "nodes" = "nodes_ensp",
       "interactors" = "interactors_ensp"
     )
 
   } else if(id_type == "uniprot") {
-    database <- database %>% select(nodes_uniprot, interactors_uniprot)
+    database <- database %>% select(nodes_uniprot, interactors_uniprot, confidence_score)
     database <- database %>% rename(
       "nodes" = "nodes_uniprot",
       "interactors" = "interactors_uniprot"
     )
 
   } else if(id_type == "ensg") {
-    database <- database %>% select(nodes_ensg, interactors_ensg)
+    database <- database %>% select(nodes_ensg, interactors_ensg, confidence_score)
     database <- database %>% rename(
       "nodes" = "nodes_ensg",
       "interactors" = "interactors_ensg"
     )
 
   } else if(id_type == "enst") {
-    database <- database %>% select(nodes_enst, interactors_enst)
+    database <- database %>% select(nodes_enst, interactors_enst, confidence_score)
     database <- database %>% rename(
       "nodes" = "nodes_enst",
       "interactors" = "interactors_enst"
     )
 
   } else if(id_type == "hgnc") {
-    database <- database %>% select(nodes_hgnc, interactors_hgnc)
+    database <- database %>% select(nodes_hgnc, interactors_hgnc, confidence_score)
     database <- database %>% rename(
       "nodes" = "nodes_hgnc",
       "interactors" = "interactors_hgnc"
     )
   }
-  database <- database %>% na.omit
+
+  # remove duplicate rows
+  database <- database %>%
+    drop_na() %>%
+    distinct()
 
   if(order == 0) {
 
     network <- database %>%
       filter(nodes %in% seed_nodes & interactors %in% seed_nodes)
 
+    # Step to remove double interactions e.g A-B and B-A should count as 1, not 2.
+    # Create a unique identifier for each interaction pair
+    network_final <- network %>%
+      rowwise() %>%
+      mutate(interaction_id = paste(sort(c(nodes, interactors)), collapse = "-")) %>%
+      ungroup()
+
+    # Now filter out the duplicates
+    network_final <- network_final %>%
+      distinct(interaction_id, .keep_all = TRUE) %>%
+      select(., -interaction_id)
+
   }else if(order == 1) {
+
     all_network <- get_all_interactions(database = database)
 
     #### now the virtual pulldown itself
@@ -267,8 +288,6 @@ virtual_pulldown <- function(seed_nodes, database, id_type, string_confidence_sc
   node_attributes <- rel %>%
     left_join(., seed_tibble, by = "nodes") %>%
     mutate(seed = replace_na(seed, 0)) # replace NAs with "0", only in the seed column. So that the non-seed are 0s.
-
-  colnames(node_attributes)[2] <- "relevance_score"
 
   # Step to remove double interactions e.g A-B and B-A should count as 1, not 2.
   # Create a unique identifier for each interaction pair
