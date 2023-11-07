@@ -268,6 +268,8 @@ virtual_pulldown <- function(seed_nodes, database, id_type, string_confidence_sc
     left_join(., seed_tibble, by = "nodes") %>%
     mutate(seed = replace_na(seed, 0)) # replace NAs with "0", only in the seed column. So that the non-seed are 0s.
 
+  colnames(node_attributes)[2] <- "relevance_score"
+
   # Step to remove double interactions e.g A-B and B-A should count as 1, not 2.
   # Create a unique identifier for each interaction pair
   network_final <- network %>%
