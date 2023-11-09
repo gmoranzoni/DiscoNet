@@ -360,7 +360,7 @@ mcode <- function(graph, D = 0.5, haircut = FALSE, fluff = FALSE, fdt = 0.8, loo
 #' @param network An `igraph` object. The input network for community detection.
 #' @param algorithm Character string. Specifies the algorithm ('louvain', 'leiden', or 'mcode').
 #' @param D Numeric. Vertex weight percentage, relevant for MCODE. Default is 0.5.
-#' @param haircut Logical. MCODE-specific, trims singly-connected nodes. Default is FALSE.
+#' @param haircut Logical. MCODE-specific, trims singly-connected nodes. Default is TRUE.
 #' @param fluff Logical. MCODE-specific, expands clusters to include bordering nodes. Default is FALSE.
 #' @param fdt Numeric. MCODE-specific, used in the fluff procedure. Default is 0.8.
 #' @param loops Logical. Indicates if loops are allowed in the graph. Default is FALSE.
@@ -379,7 +379,7 @@ mcode <- function(graph, D = 0.5, haircut = FALSE, fluff = FALSE, fdt = 0.8, loo
 #' result_mcode <- community_detection(my_graph, algorithm = "mcode", D = 0.6, fluff = TRUE)
 #'}
 
-community_detection <- function(network, algorithm, D = 0.5, haircut = FALSE, fluff = FALSE, fdt = 0.8, loops = FALSE, resolution = 1) {
+community_detection <- function(network, algorithm, D = 0.5, haircut = TRUE, fluff = FALSE, fdt = 0.8, loops = FALSE, resolution = 1) {
 
   stopifnot(is.igraph(network))
 
