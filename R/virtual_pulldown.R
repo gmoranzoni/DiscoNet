@@ -182,42 +182,84 @@ virtual_pulldown <- function(seed_nodes, database, id_type, string_confidence_sc
     }
   }
 
-  # select the relevant columns based on the IDs
-  if(id_type == "ensp") {
-    database <- database %>% select(nodes_ensp, interactors_ensp, confidence_score)
-    database <- database %>% rename(
-      "nodes" = "nodes_ensp",
-      "interactors" = "interactors_ensp"
-    )
+  if("confidence_score" %in% colnames(database)) {
+    # select the relevant columns based on the IDs
+    if(id_type == "ensp") {
+      database <- database %>% select(nodes_ensp, interactors_ensp, confidence_score)
+      database <- database %>% rename(
+        "nodes" = "nodes_ensp",
+        "interactors" = "interactors_ensp"
+      )
 
-  } else if(id_type == "uniprot") {
-    database <- database %>% select(nodes_uniprot, interactors_uniprot, confidence_score)
-    database <- database %>% rename(
-      "nodes" = "nodes_uniprot",
-      "interactors" = "interactors_uniprot"
-    )
+    } else if(id_type == "uniprot") {
+      database <- database %>% select(nodes_uniprot, interactors_uniprot, confidence_score)
+      database <- database %>% rename(
+        "nodes" = "nodes_uniprot",
+        "interactors" = "interactors_uniprot"
+      )
 
-  } else if(id_type == "ensg") {
-    database <- database %>% select(nodes_ensg, interactors_ensg, confidence_score)
-    database <- database %>% rename(
-      "nodes" = "nodes_ensg",
-      "interactors" = "interactors_ensg"
-    )
+    } else if(id_type == "ensg") {
+      database <- database %>% select(nodes_ensg, interactors_ensg, confidence_score)
+      database <- database %>% rename(
+        "nodes" = "nodes_ensg",
+        "interactors" = "interactors_ensg"
+      )
 
-  } else if(id_type == "enst") {
-    database <- database %>% select(nodes_enst, interactors_enst, confidence_score)
-    database <- database %>% rename(
-      "nodes" = "nodes_enst",
-      "interactors" = "interactors_enst"
-    )
+    } else if(id_type == "enst") {
+      database <- database %>% select(nodes_enst, interactors_enst, confidence_score)
+      database <- database %>% rename(
+        "nodes" = "nodes_enst",
+        "interactors" = "interactors_enst"
+      )
 
-  } else if(id_type == "hgnc") {
-    database <- database %>% select(nodes_hgnc, interactors_hgnc, confidence_score)
-    database <- database %>% rename(
-      "nodes" = "nodes_hgnc",
-      "interactors" = "interactors_hgnc"
-    )
+    } else if(id_type == "hgnc") {
+      database <- database %>% select(nodes_hgnc, interactors_hgnc, confidence_score)
+      database <- database %>% rename(
+        "nodes" = "nodes_hgnc",
+        "interactors" = "interactors_hgnc"
+      )
+    }
+
+  } else {
+    # select the relevant columns based on the IDs
+    if(id_type == "ensp") {
+      database <- database %>% select(nodes_ensp, interactors_ensp)
+      database <- database %>% rename(
+        "nodes" = "nodes_ensp",
+        "interactors" = "interactors_ensp"
+      )
+
+    } else if(id_type == "uniprot") {
+      database <- database %>% select(nodes_uniprot, interactors_uniprot)
+      database <- database %>% rename(
+        "nodes" = "nodes_uniprot",
+        "interactors" = "interactors_uniprot"
+      )
+
+    } else if(id_type == "ensg") {
+      database <- database %>% select(nodes_ensg, interactors_ensg)
+      database <- database %>% rename(
+        "nodes" = "nodes_ensg",
+        "interactors" = "interactors_ensg"
+      )
+
+    } else if(id_type == "enst") {
+      database <- database %>% select(nodes_enst, interactors_enst)
+      database <- database %>% rename(
+        "nodes" = "nodes_enst",
+        "interactors" = "interactors_enst"
+      )
+
+    } else if(id_type == "hgnc") {
+      database <- database %>% select(nodes_hgnc, interactors_hgnc)
+      database <- database %>% rename(
+        "nodes" = "nodes_hgnc",
+        "interactors" = "interactors_hgnc"
+      )
+    }
   }
+
+
 
   # remove duplicate rows
   database <- database %>%
